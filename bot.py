@@ -2,9 +2,7 @@ import os
 import requests
 import discord
 from yt_dlp import YoutubeDL
-from config import DISCORD_BOT_TOKEN, UPLOADBOT_USERNAME, UPLOADBOT_PASSWORD, BACKEND_URL
-
-CLIP_CHANNEL_ID = 1052731937086783508
+from config import DISCORD_BOT_TOKEN, UPLOADBOT_USERNAME, UPLOADBOT_PASSWORD, BACKEND_URL, CLIP_CHANNEL_ID
 
 intents = discord.Intents.default()
 intents.message_content = True
