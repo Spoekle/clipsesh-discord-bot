@@ -1,0 +1,3 @@
+discord.py
+requests
+yt-dlp
