@@ -6,6 +6,6 @@
 
 # misc
 config.py
-bot.log
+*.log
 
 
