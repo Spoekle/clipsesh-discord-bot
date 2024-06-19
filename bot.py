@@ -3,7 +3,7 @@ import requests
 import discord
 import logging
 import schedule
-import time
+import asyncio
 from yt_dlp import YoutubeDL
 from config import DISCORD_BOT_TOKEN, UPLOADBOT_USERNAME, UPLOADBOT_PASSWORD, BACKEND_URL, CLIP_CHANNEL_ID
 
@@ -20,7 +20,6 @@ def get_backend_token():
         'password': UPLOADBOT_PASSWORD
     })
     response.raise_for_status()
-    logging.debug(f'Backend token: {response.json()["token"]}')
     return response.json()['token']
 
 def refresh_token():
@@ -37,7 +36,7 @@ async def on_ready():
 
     while True:
         schedule.run_pending()
-        time.sleep(1)
+        await asyncio.sleep(1)
 
 @client.event
 async def on_message(message):
