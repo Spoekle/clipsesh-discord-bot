@@ -31,7 +31,7 @@ def refresh_token():
 async def on_ready():
     print(f'Logged in as {client.user}')
     refresh_token()
-    schedule.every(50).minutes.do(refresh_token)
+    schedule.every(170).minutes.do(refresh_token)
     await client.change_presence(activity=discord.CustomActivity(name='Fetching your clips...'))
 
     while True:
