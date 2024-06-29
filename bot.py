@@ -71,7 +71,7 @@ async def on_message(message):
 
             await message.attachments[0].save(fp=filename)
             logging.debug(f'Saved attachment to: {filename}')
-            streamer = message.author.name
+            streamer = message.author.name + ' Discord'
 
     with open(filename, 'rb') as f:
         files = {'clip': f}
