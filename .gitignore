@@ -6,6 +6,8 @@
 
 # misc
 config.py
+*.log.old
 *.log
+/logs
 
 

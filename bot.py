@@ -4,15 +4,24 @@ import discord
 import logging
 import schedule
 import asyncio
+import re
 from yt_dlp import YoutubeDL
 from config import DISCORD_BOT_TOKEN, UPLOADBOT_USERNAME, UPLOADBOT_PASSWORD, BACKEND_URL, CLIP_CHANNEL_ID
+from logging.handlers import TimedRotatingFileHandler
 
 intents = discord.Intents.default()
 intents.message_content = True
 client = discord.Client(intents=intents)
 
-logging.basicConfig(filename='bot.log', level=logging.DEBUG, 
+logs_dir = 'logs'
+if not os.path.exists(logs_dir):
+    os.makedirs(logs_dir)
+
+log_filename = os.path.join(logs_dir, 'bot.log')
+logging.basicConfig(handlers=[TimedRotatingFileHandler(log_filename, when="midnight", interval=1, backupCount=21)],
+                    level=logging.DEBUG, 
                     format='%(asctime)s:%(levelname)s:%(message)s')
+
 
 def get_backend_token():
     response = requests.post(f'{BACKEND_URL}/api/users/login', json={
@@ -42,21 +51,27 @@ async def on_ready():
 async def on_message(message):
     if message.author == client.user or message.channel.id != CLIP_CHANNEL_ID:
         return
+    
+    # Define a regex pattern for URLs
+    url_pattern = r'(https?://[^\s]+)'
+    urls = re.findall(url_pattern, message.content)
 
-    if 'youtube.com' in message.content or 'youtu.be' in message.content or 'twitch.tv' in message.content:
+    if urls:
         # await message.add_reaction('🔄')
-        url = message.content.strip()
+        url = urls[0].strip()
         ydl_opts = {
             'outtmpl': 'downloads/%(id)s.%(ext)s',
             'ratelimit': 20 * 1024 * 1024,
         }
         logging.debug(f'Received message with URL: {url}')
 
-        with YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
-            logging.debug(f'YoutubeDL info: {info}')
-            filename = ydl.prepare_filename(info)
-            streamer = info.get('creator', info.get('channel'))
+        if 'youtube.com' in url or 'youtu.be' in url or 'twitch.tv' in url:
+            with YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=True)
+                logging.debug(f'YoutubeDL info: {info}')
+                filename = ydl.prepare_filename(info)
+                streamer = info.get('creator', info.get('channel'))
+                title = info.get('title', 'YT Clip')
 
     elif message.attachments and 'cdn.discordapp.com' in message.attachments[0].url:
         # await message.add_reaction('🔄')
@@ -71,11 +86,12 @@ async def on_message(message):
 
             await message.attachments[0].save(fp=filename)
             logging.debug(f'Saved attachment to: {filename}')
-            streamer = message.author.name + ' Discord'
+            streamer = message.author.name
+            title = "Discord Clip"
 
     with open(filename, 'rb') as f:
         files = {'clip': f}
-        data = {'streamer': streamer}
+        data = {'streamer': streamer, 'title': title}
         headers = {'Authorization': f'Bearer {BACKEND_TOKEN}'}
         logging.debug(f'Sending POST request to {BACKEND_URL}/api/clips/upload with streamer: {streamer}')
         response = requests.post(f'{BACKEND_URL}/api/clips/upload', files=files, data=data, headers=headers)
