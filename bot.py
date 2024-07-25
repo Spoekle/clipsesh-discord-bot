@@ -65,12 +65,12 @@ async def on_message(message):
         }
         logging.debug(f'Received message with URL: {url}')
 
-        if 'youtube.com' in url or 'youtu.be' in url or 'twitch.tv' in url:
+        if 'youtube.com' in url or 'youtu.be' in url or 'twitch.tv' in url or 'medal.tv' in url:
             with YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=True)
                 logging.debug(f'YoutubeDL info: {info}')
                 filename = ydl.prepare_filename(info)
-                streamer = info.get('creator', info.get('channel'))
+                streamer = info.get('creator', info.get('channel')) or message.author.name
                 title = info.get('title', 'YT Clip')
 
     elif message.attachments and 'cdn.discordapp.com' in message.attachments[0].url:
@@ -78,7 +78,7 @@ async def on_message(message):
         split_v1 = str(message.attachments).split("filename='")[1]
         filename = str(split_v1).split("' ")[0]
         logging.debug(f'Filename from message attachments: {filename}')
-        if filename.endswith(".mp4"):
+        if filename.endswith(".mp4") or filename.endswith(".mov"):
             filename = "downloads/{}".format(filename)
             logging.debug(f'New filename: {filename}')
 
