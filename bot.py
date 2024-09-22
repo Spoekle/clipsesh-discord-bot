@@ -49,7 +49,8 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
-    if message.author == client.user or message.channel.id != CLIP_CHANNEL_ID:
+
+    if message.author == client.user or message.channel.id not in CLIP_CHANNEL_ID:
         return
     
     # Define a regex pattern for URLs
@@ -69,6 +70,7 @@ async def on_message(message):
             with YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=True)
                 logging.debug(f'YoutubeDL info: {info}')
+                link = url
                 filename = ydl.prepare_filename(info)
                 streamer = info.get('creator', info.get('channel')) or message.author.name
                 title = info.get('title', 'YT Clip')
@@ -88,10 +90,11 @@ async def on_message(message):
             logging.debug(f'Saved attachment to: {filename}')
             streamer = message.author.name
             title = "Discord Clip"
+            link = message.jump_url
 
     with open(filename, 'rb') as f:
         files = {'clip': f}
-        data = {'streamer': streamer, 'title': title}
+        data = {'streamer': streamer, 'title': title, 'link': link}
         headers = {'Authorization': f'Bearer {BACKEND_TOKEN}'}
         logging.debug(f'Sending POST request to {BACKEND_URL}/api/clips/upload with streamer: {streamer}')
         response = requests.post(f'{BACKEND_URL}/api/clips/upload', files=files, data=data, headers=headers)
