@@ -1,5 +1,6 @@
 import os
 import requests
+import ffmpeg
 import discord
 import logging
 import schedule
