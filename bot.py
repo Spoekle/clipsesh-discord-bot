@@ -111,5 +111,5 @@ async def on_message(message):
         logging.error(f'Response status code is not 200, it is: {response.status_code}. Removing file.')
         os.remove(filename)
 
-logging.info('Running client with DISCORD_BOT_TOKEN.')
+logging.info('Running client with {DISCORD_BOT_TOKEN}')
 client.run(DISCORD_BOT_TOKEN)
