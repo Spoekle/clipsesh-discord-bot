@@ -9,6 +9,8 @@ import re
 from yt_dlp import YoutubeDL
 from config import DISCORD_BOT_TOKEN, UPLOADBOT_USERNAME, UPLOADBOT_PASSWORD, BACKEND_URL, CLIP_CHANNEL_ID
 from logging.handlers import TimedRotatingFileHandler
+import subprocess
+import shutil
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -19,9 +21,24 @@ if not os.path.exists(logs_dir):
     os.makedirs(logs_dir)
 
 log_filename = os.path.join(logs_dir, 'bot.log')
-logging.basicConfig(handlers=[TimedRotatingFileHandler(log_filename, when="midnight", interval=1, backupCount=21)],
+logging.basicConfig(handlers=[TimedRotatingFileHandler(log_filename, when="midnight", interval=1, backupCount=7)],
                     level=logging.DEBUG, 
                     format='%(asctime)s:%(levelname)s:%(message)s')
+
+
+def check_ffmpeg():
+    try:
+        result = subprocess.run(['ffmpeg', '-version'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        logging.debug('FFmpeg is installed and accessible.')
+    except subprocess.CalledProcessError:
+        logging.error('FFmpeg is installed but returned an error.')
+        raise
+    except FileNotFoundError:
+        logging.error('FFmpeg is not installed or not found in PATH.')
+        raise
+
+# Call the check at startup
+check_ffmpeg()
 
 
 def get_backend_token():
@@ -92,6 +109,32 @@ async def on_message(message):
             streamer = message.author.name
             title = "Discord Clip"
             link = message.jump_url
+
+    # Compress and convert video to h.264 using FFmpeg
+    try:
+        logging.debug(f'Compressing and converting video: {filename}')
+        temp_filename = f"{filename}.temp.mp4"
+
+        (
+            ffmpeg
+            .input(filename)
+            .output(temp_filename, vcodec='libx264', crf=23)
+            .overwrite_output()
+            .run(quiet=True)
+        )
+        logging.debug('Video compression and conversion completed.')
+
+        # Replace the original file with the compressed file
+        shutil.move(temp_filename, filename)
+        logging.debug(f'Replaced original file with compressed file: {filename}')
+
+    except ffmpeg.Error as e:
+        logging.error(f'FFmpeg error: {e.stderr.decode()}')
+        if os.path.exists(temp_filename):
+            os.remove(temp_filename)
+        os.remove(filename)
+        await message.channel.send("An error occurred while processing the video.")
+        return
 
     with open(filename, 'rb') as f:
         files = {'clip': f}
