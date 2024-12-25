@@ -92,6 +92,7 @@ async def on_message(message):
                 filename = ydl.prepare_filename(info)
                 streamer = info.get('creator', info.get('channel')) or message.author.name
                 title = info.get('title', 'YT Clip')
+                submitter = message.author.name
 
     elif message.attachments and 'cdn.discordapp.com' in message.attachments[0].url:
         # await message.add_reaction('🔄')
@@ -109,6 +110,7 @@ async def on_message(message):
             streamer = message.author.name
             title = "Discord Clip"
             link = message.jump_url
+            submitter = message.author.name
 
     # Compress and convert video to h.264 using FFmpeg
     try:
@@ -138,7 +140,7 @@ async def on_message(message):
 
     with open(filename, 'rb') as f:
         files = {'clip': f}
-        data = {'streamer': streamer, 'title': title, 'link': link}
+        data = {'streamer': streamer, 'title': title, 'link': link, 'submitter': submitter}
         headers = {'Authorization': f'Bearer {BACKEND_TOKEN}'}
         logging.debug(f'Sending POST request to {BACKEND_URL}/api/clips/upload with streamer: {streamer}')
         response = requests.post(f'{BACKEND_URL}/api/clips/upload', files=files, data=data, headers=headers)
