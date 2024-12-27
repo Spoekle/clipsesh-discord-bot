@@ -90,7 +90,7 @@ async def on_message(message):
                 logging.debug(f'YoutubeDL info: {info}')
                 link = url
                 filename = ydl.prepare_filename(info)
-                streamer = info.get('creator', info.get('channel')) or message.author.name
+                streamer = info.get('creator') or info.get('channel') or info.get('uploader') or message.author.name
                 title = info.get('title', 'YT Clip')
                 submitter = message.author.name
 
